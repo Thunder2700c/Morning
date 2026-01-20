@@ -2,15 +2,17 @@ document.addEventListener("DOMContentLoaded", () => {
     gsap.registerPlugin(ScrollTrigger);
 
     const lenis = new Lenis();
-    lenis.on("scroll", ScrollTrigger.update); // ✅ Fix 1: lowercase "scroll"
+    lenis.on("scroll", ScrollTrigger.update);
     gsap.ticker.add((time) => {
         lenis.raf(time * 1000);
     });
     gsap.ticker.lagSmoothing(0);
 
-    const teamSection = document.querySelector(".team"); // ✅ Fix 2: "teemSection" → "teamSection"
+    const teamSection = document.querySelector(".team");
     const teamMembers = gsap.utils.toArray(".team-member");
-    const teamMemberCards = gsap.utils.toArray(".team-member-card"); // ✅ Fix 3: plural "teamMemberCards"
+    const teamMemberCards = gsap.utils.toArray(".team-member-card");
+
+    const memberCount = teamMembers.length;
 
     let cardPlaceholderEntrance = null;
     let cardSlideInAnimation = null;
@@ -28,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 gsap.set(teamMemberInitial, { clearProps: "all" });
             });
 
-            teamMemberCards.forEach((card) => { // ✅ Fix 4: matches variable name now
+            teamMemberCards.forEach((card) => {
                 gsap.set(card, { clearProps: "all" });
             });
 
@@ -38,26 +40,36 @@ document.addEventListener("DOMContentLoaded", () => {
         if (cardPlaceholderEntrance) cardPlaceholderEntrance.kill();
         if (cardSlideInAnimation) cardSlideInAnimation.kill();
 
+        // ENTRANCE ANIMATION - Members slide up row by row
         cardPlaceholderEntrance = ScrollTrigger.create({
             trigger: teamSection,
             start: "top bottom",
-            end: "top top",
+            end: "top 20%",
             scrub: 1,
             onUpdate: (self) => {
                 const progress = self.progress;
 
-                teamMembers.forEach((member, index) => { // ✅ Fix 5: added dot "teamMembers.forEach"
+                teamMembers.forEach((member, index) => {
+                    // Calculate which row this member is in (0, 1, 2, 3)
+                    const row = Math.floor(index / 3);
+                    
+                    // Stagger by row
                     const entranceDelay = 0.15;
-                    const entranceDuration = 0.7;
-                    const entranceStart = index * entranceDelay;
+                    const entranceDuration = 0.4;
+                    const entranceStart = row * entranceDelay;
                     const entranceEnd = entranceStart + entranceDuration;
 
                     if (progress >= entranceStart && progress <= entranceEnd) {
                         const memberEntranceProgress =
                             (progress - entranceStart) / entranceDuration;
 
-                        const entranceY = 125 - memberEntranceProgress * 125;
-                        gsap.set(member, { y: `${entranceY}%` });
+                        const entranceY = 100 - memberEntranceProgress * 100;
+                        const entranceOpacity = memberEntranceProgress;
+                        
+                        gsap.set(member, { 
+                            y: `${entranceY}%`,
+                            opacity: entranceOpacity
+                        });
 
                         const teamMemberInitial = member.querySelector(
                             ".team-member-name-initial h1"
@@ -68,9 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
                             (memberEntranceProgress - initialLetterScaleDelay) /
                                 (1 - initialLetterScaleDelay)
                         );
-                        gsap.set(teamMemberInitial, { scale: initialLetterScaleProgress }); // ✅ Fix 6: was "initialLetterScaleDelay"
+                        gsap.set(teamMemberInitial, { scale: initialLetterScaleProgress });
                     } else if (progress > entranceEnd) {
-                        gsap.set(member, { y: "0%" });
+                        gsap.set(member, { y: "0%", opacity: 1 });
                         const teamMemberInitial = member.querySelector(
                             ".team-member-name-initial h1"
                         );
@@ -80,26 +92,28 @@ document.addEventListener("DOMContentLoaded", () => {
             },
         });
 
+        // CARD SLIDE-IN ANIMATION
         cardSlideInAnimation = ScrollTrigger.create({
             trigger: teamSection,
-            start: "top top",
+            start: "top 20%",
             end: `+=${window.innerHeight * 3}`,
             pin: true,
             scrub: 1,
             onUpdate: (self) => {
                 const progress = self.progress;
 
-                teamMemberCards.forEach((card, index) => { // ✅ Fix 7: "teamMemberCard" → "teamMemberCards"
-                    const slideInStagger = 0.075;
-                    const xRotationDuration = 0.4;
+                teamMemberCards.forEach((card, index) => {
+                    // Stagger each card individually
+                    const slideInStagger = 0.08;
+                    const xRotationDuration = 0.2;
                     const xRotationStart = index * slideInStagger;
-                    const xRotationEnd = xRotationStart + xRotationDuration; // ✅ Fix 8: "xRotationend" → "xRotationEnd"
+                    const xRotationEnd = xRotationStart + xRotationDuration;
 
-                    if (progress >= xRotationStart && progress <= xRotationEnd) { // ✅ Fix 8: "xRotationend" → "xRotationEnd"
+                    if (progress >= xRotationStart && progress <= xRotationEnd) {
                         const cardProgress =
                             (progress - xRotationStart) / xRotationDuration;
 
-                        const cardInitialX = 300 - index * 100;
+                        const cardInitialX = 300;
                         const cardTargetX = -50;
                         const cardSlideInX =
                             cardInitialX + cardProgress * (cardTargetX - cardInitialX);
@@ -112,13 +126,13 @@ document.addEventListener("DOMContentLoaded", () => {
                         });
                     } else if (progress > xRotationEnd) {
                         gsap.set(card, {
-                            x: "-50%", // ✅ Fix 9: was `-50` (missing % and quotes)
+                            x: "-50%",
                             rotation: 0,
                         });
                     }
 
-                    const cardScaleStagger = 0.12;
-                    const cardScaleStart = 0.4;
+                    // Scale animation
+                    const cardScaleStart = 0.6;
                     const cardScaleEnd = 1;
 
                     if (progress >= cardScaleStart && progress <= cardScaleEnd) {
