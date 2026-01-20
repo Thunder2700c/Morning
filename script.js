@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     gsap.registerPlugin(ScrollTrigger);
 
-    // Smooth Scroll Setup
+    // Initialize Smooth Scroll
     const lenis = new Lenis();
     lenis.on("scroll", ScrollTrigger.update);
     gsap.ticker.add((time) => {
@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     gsap.ticker.lagSmoothing(0);
 
-    // --- 1. DATA CONFIGURATION (Updated Roles) ---
+    // 1. DATA CONFIG
     const membersConfig = [
         { name: "Rishi", roles: "Cast • Writer • Actor • Camera Man • Director" },
         { name: "Binam", roles: "Cast • Writer • Editor • Actor • Camera Man • Director" },
@@ -20,148 +20,101 @@ document.addEventListener("DOMContentLoaded", () => {
         { name: "Dhruv", roles: "Cast • Actor" },
         { name: "Gurtej", roles: "Post Credit" },
         { name: "Jaskaran", roles: "Executive Producer" },
-        { name: "Team", roles: "Production Crew" } 
+        { name: "Team", roles: "Production Crew" }
     ];
 
-    // Inject Data into HTML
+    // Populate Content
     const memberElements = document.querySelectorAll('.team-member');
     memberElements.forEach((member, index) => {
         if (membersConfig[index]) {
             const data = membersConfig[index];
-            const nameEl = member.querySelector('.name-text');
-            const roleEl = member.querySelector('.role-text');
-            const initialEl = member.querySelector('.team-member-name-initial h1');
-
-            if (nameEl) nameEl.innerHTML = `${data.name}`;
-            if (roleEl) roleEl.innerText = `( ${data.roles} )`;
-            if (initialEl) initialEl.innerText = data.name.charAt(0);
+            member.querySelector('.name-text').innerText = data.name;
+            member.querySelector('.role-text').innerText = `( ${data.roles} )`;
+            member.querySelector('.team-member-name-initial h1').innerText = data.name.charAt(0);
         }
     });
 
-    // --- 2. ANIMATION LOGIC ---
     const teamSection = document.querySelector(".team");
     const teamMembers = gsap.utils.toArray(".team-member");
     const teamMemberCards = gsap.utils.toArray(".team-member-card");
 
-    let animationContext;
+    function initAnimations() {
+        if (window.innerWidth < 1000) return;
 
-    function initTeamAnimations() {
-        if (animationContext) animationContext.revert();
+        // PHASE 1: Dashed Boxes rising from bottom
+        ScrollTrigger.create({
+            trigger: teamSection,
+            start: "top bottom",
+            end: "top top",
+            scrub: 1,
+            onUpdate: (self) => {
+                const progress = self.progress;
+                teamMembers.forEach((member, index) => {
+                    const delay = index * 0.1;
+                    const duration = 0.6;
+                    const start = delay;
+                    const end = start + duration;
 
-        animationContext = gsap.context(() => {
-            
-            // --- MOBILE ANIMATION ---
-            if (window.innerWidth < 1000) {
-                teamMembers.forEach((member) => {
-                    gsap.set(member, { clearProps: "all" });
-                    gsap.set(member.querySelector(".team-member-card"), { opacity: 1 });
-                    gsap.set(member.querySelector(".team-member-name-initial h1"), { scale: 1 });
-                    
-                    gsap.from(member, {
-                        y: 100,
-                        opacity: 0,
-                        duration: 0.8,
-                        scrollTrigger: {
-                            trigger: member,
-                            start: "top 85%"
-                        }
-                    });
-                });
-                return; 
-            }
-
-            // --- DESKTOP ANIMATION (The "Original" Style) ---
-
-            // PHASE 1: Vertical Entrance (Initials rise up before section pins)
-            ScrollTrigger.create({
-                trigger: teamSection,
-                start: "top bottom", 
-                end: "top top",      
-                scrub: 1,
-                onUpdate: (self) => {
-                    const progress = self.progress;
-
-                    teamMembers.forEach((member, index) => {
-                        const stagger = 0.05; 
-                        const duration = 1 - (teamMembers.length * stagger); 
-                        const start = index * stagger;
+                    if (progress >= start && progress <= end) {
+                        const localProgress = (progress - start) / duration;
+                        const yVal = 125 - (localProgress * 125);
+                        gsap.set(member, { y: `${yVal}%` });
                         
-                        let localProgress = (progress - start) / duration;
-                        localProgress = Math.min(Math.max(localProgress, 0), 1);
-
-                        // Move from 125% down to 0%
-                        const entranceY = 125 - (localProgress * 125);
-                        gsap.set(member, { y: `${entranceY}%` });
-
-                        // Scale the Letter from 0 to 1
                         const initial = member.querySelector(".team-member-name-initial h1");
-                        gsap.set(initial, { scale: localProgress });
-                    });
-                }
-            });
+                        const scaleVal = Math.max(0, (localProgress - 0.4) / 0.6);
+                        gsap.set(initial, { scale: scaleVal });
+                    } else if (progress > end) {
+                        gsap.set(member, { y: "0%" });
+                        gsap.set(member.querySelector(".team-member-name-initial h1"), { scale: 1 });
+                    }
+                });
+            }
+        });
 
-            // PHASE 2: Horizontal Fly-In (Section pins and cards fly from right)
-            ScrollTrigger.create({
-                trigger: teamSection,
-                start: "top top",
-                end: "+=4000", 
-                pin: true,
-                scrub: 1,
-                onUpdate: (self) => {
-                    const progress = self.progress;
+        // PHASE 2: Cards Sliding In One by One
+        ScrollTrigger.create({
+            trigger: teamSection,
+            start: "top top",
+            end: `+=${window.innerHeight * 4}`, // Lengthened for 10 members
+            pin: true,
+            scrub: 1,
+            onUpdate: (self) => {
+                const progress = self.progress;
+                teamMemberCards.forEach((card, index) => {
+                    const slideStagger = 0.07; // Speed between each card
+                    const slideDuration = 0.3;
+                    const start = index * slideStagger;
+                    const end = start + slideDuration;
 
-                    teamMemberCards.forEach((card, index) => {
-                        const slideInStagger = 0.08;
-                        const duration = 0.3;
-                        const start = index * slideInStagger;
-                        const end = start + duration;
+                    if (progress >= start && progress <= end) {
+                        const cardProgress = (progress - start) / slideDuration;
+                        
+                        // Start from right (300%) to center (-50%)
+                        const startX = 300 - (index * 40); 
+                        const currentX = startX + cardProgress * (-50 - startX);
+                        const currentRot = 20 - (cardProgress * 20);
+                        const currentScale = 0.75 + (cardProgress * 0.25);
 
-                        if (progress < start) {
-                            gsap.set(card, { 
-                                xPercent: 300, 
-                                yPercent: -50, 
-                                rotation: 20, 
-                                scale: 0.75,
-                                opacity: 0 
-                            });
-                        } else if (progress >= start && progress <= end) {
-                            const localProgress = (progress - start) / duration;
-                            
-                            const currentX = 300 + localProgress * (-50 - 300);
-                            const currentRot = 20 - (localProgress * 20);
-                            const currentScale = 0.75 + (localProgress * 0.25);
-
-                            gsap.set(card, {
-                                xPercent: currentX,
-                                yPercent: -50,
-                                rotation: currentRot,
-                                scale: currentScale,
-                                opacity: 1
-                            });
-                        } else {
-                            gsap.set(card, {
-                                xPercent: -50,
-                                yPercent: -50,
-                                rotation: 0,
-                                scale: 1,
-                                opacity: 1
-                            });
-                        }
-                    });
-                }
-            });
+                        gsap.set(card, {
+                            xPercent: currentX,
+                            rotation: currentRot,
+                            scale: currentScale,
+                            opacity: 1
+                        });
+                    } else if (progress > end) {
+                        gsap.set(card, { xPercent: -50, rotation: 0, scale: 1, opacity: 1 });
+                    } else {
+                        gsap.set(card, { opacity: 0 }); // Hide if not yet reached
+                    }
+                });
+            }
         });
     }
 
-    // Handle Window Resize
-    let resizeTimer;
-    window.addEventListener("resize", () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            initTeamAnimations();
-            ScrollTrigger.refresh();
-        }, 250);
-    });
+    initAnimations();
 
-    initTeamAnimations();
+    // Refresh on resize
+    window.addEventListener("resize", () => {
+        ScrollTrigger.refresh();
+    });
 });
