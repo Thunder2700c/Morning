@@ -9,8 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     gsap.ticker.lagSmoothing(0);
 
-    // --- 1. DATA CONFIGURATION ---
-    // Configure your list here. The script will inject these names/roles into the HTML order.
+    // --- 1. DATA CONFIGURATION (Updated Roles) ---
     const membersConfig = [
         { name: "Rishi", roles: "Cast • Writer • Actor • Camera Man • Director" },
         { name: "Binam", roles: "Cast • Writer • Editor • Actor • Camera Man • Director" },
@@ -20,8 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
         { name: "Jashan", roles: "Cast • Camera Man" },
         { name: "Dhruv", roles: "Cast • Actor" },
         { name: "Gurtej", roles: "Post Credit" },
-        { name: "Jaskaran", roles: "Cast" }, // Added filler based on original HTML
-        { name: "Unknown", roles: "Special Thanks" } // Filler for 10th card
+        { name: "Jaskaran", roles: "Executive Producer" },
+        { name: "Team", roles: "Production Crew" } 
     ];
 
     // Inject Data into HTML
@@ -43,103 +42,118 @@ document.addEventListener("DOMContentLoaded", () => {
     const teamSection = document.querySelector(".team");
     const teamMembers = gsap.utils.toArray(".team-member");
     const teamMemberCards = gsap.utils.toArray(".team-member-card");
-    const teamInitials = gsap.utils.toArray(".team-member-name-initial h1");
 
     let animationContext;
 
     function initTeamAnimations() {
-        if (animationContext) animationContext.revert(); // Cleanup old animation on resize
+        if (animationContext) animationContext.revert();
 
         animationContext = gsap.context(() => {
             
-            // MOBILE ANIMATION (Simple Fade Up)
+            // --- MOBILE ANIMATION ---
             if (window.innerWidth < 1000) {
                 teamMembers.forEach((member) => {
+                    gsap.set(member, { clearProps: "all" });
+                    gsap.set(member.querySelector(".team-member-card"), { opacity: 1 });
+                    gsap.set(member.querySelector(".team-member-name-initial h1"), { scale: 1 });
+                    
                     gsap.from(member, {
                         y: 100,
                         opacity: 0,
-                        duration: 1,
+                        duration: 0.8,
                         scrollTrigger: {
                             trigger: member,
-                            start: "top 85%",
-                            end: "top 60%",
-                            scrub: 1
-                        }
-                    });
-                    
-                    // Initial pops in
-                    const initial = member.querySelector(".team-member-name-initial h1");
-                    gsap.to(initial, {
-                        scale: 1,
-                        scrollTrigger: {
-                            trigger: member,
-                            start: "top 70%",
-                            end: "top 50%",
-                            scrub: 1
+                            start: "top 85%"
                         }
                     });
                 });
                 return; 
             }
 
-            // DESKTOP ANIMATION (The "Files Leaked" Pin & Fly-in)
-            
-            // 1. Initial State: Hide cards and scale down initials
-            gsap.set(teamMemberCards, { 
-                x: "200%", // Push off screen to right
-                rotation: 15,
-                opacity: 0
-            });
-            gsap.set(teamInitials, { scale: 0 });
+            // --- DESKTOP ANIMATION (The "Original" Style) ---
 
-            // 2. Master Timeline
-            const tl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: teamSection,
-                    start: "top top", // Start when section hits top
-                    end: "+=3000", // Length of scroll duration
-                    pin: true,     // Hold the section in place
-                    scrub: 1,      // Smooth scrubbing
+            // PHASE 1: Vertical Entrance (Initials rise up before section pins)
+            ScrollTrigger.create({
+                trigger: teamSection,
+                start: "top bottom", 
+                end: "top top",      
+                scrub: 1,
+                onUpdate: (self) => {
+                    const progress = self.progress;
+
+                    teamMembers.forEach((member, index) => {
+                        const stagger = 0.05; 
+                        const duration = 1 - (teamMembers.length * stagger); 
+                        const start = index * stagger;
+                        
+                        let localProgress = (progress - start) / duration;
+                        localProgress = Math.min(Math.max(localProgress, 0), 1);
+
+                        // Move from 125% down to 0%
+                        const entranceY = 125 - (localProgress * 125);
+                        gsap.set(member, { y: `${entranceY}%` });
+
+                        // Scale the Letter from 0 to 1
+                        const initial = member.querySelector(".team-member-name-initial h1");
+                        gsap.set(initial, { scale: localProgress });
+                    });
                 }
             });
 
-            // Sequence:
-            // A. Initials pop up slightly staggered
-            tl.to(teamInitials, {
-                scale: 1,
-                duration: 1,
-                stagger: 0.1,
-                ease: "back.out(1.7)"
+            // PHASE 2: Horizontal Fly-In (Section pins and cards fly from right)
+            ScrollTrigger.create({
+                trigger: teamSection,
+                start: "top top",
+                end: "+=4000", 
+                pin: true,
+                scrub: 1,
+                onUpdate: (self) => {
+                    const progress = self.progress;
+
+                    teamMemberCards.forEach((card, index) => {
+                        const slideInStagger = 0.08;
+                        const duration = 0.3;
+                        const start = index * slideInStagger;
+                        const end = start + duration;
+
+                        if (progress < start) {
+                            gsap.set(card, { 
+                                xPercent: 300, 
+                                yPercent: -50, 
+                                rotation: 20, 
+                                scale: 0.75,
+                                opacity: 0 
+                            });
+                        } else if (progress >= start && progress <= end) {
+                            const localProgress = (progress - start) / duration;
+                            
+                            const currentX = 300 + localProgress * (-50 - 300);
+                            const currentRot = 20 - (localProgress * 20);
+                            const currentScale = 0.75 + (localProgress * 0.25);
+
+                            gsap.set(card, {
+                                xPercent: currentX,
+                                yPercent: -50,
+                                rotation: currentRot,
+                                scale: currentScale,
+                                opacity: 1
+                            });
+                        } else {
+                            gsap.set(card, {
+                                xPercent: -50,
+                                yPercent: -50,
+                                rotation: 0,
+                                scale: 1,
+                                opacity: 1
+                            });
+                        }
+                    });
+                }
             });
-
-            // B. Cards fly in from right to cover initials
-            tl.to(teamMemberCards, {
-                x: "0%",       // Move to grid position
-                rotation: 0,   // Straighten up
-                opacity: 1,
-                duration: 5,   // Duration relative to scroll length
-                stagger: 0.2,  // One after another
-                ease: "power3.out"
-            }, "<0.5"); // Start slightly after initials start
-
-            // C. Subtle hover effect scaling as you scroll past
-            tl.to(teamMemberCards, {
-                scale: 1.05,
-                stagger: {
-                    each: 0.2,
-                    yoyo: true,
-                    repeat: 1
-                },
-                duration: 1
-            }, "<2");
-
         });
     }
 
-    // Initialize
-    initTeamAnimations();
-
-    // Handle Resize
+    // Handle Window Resize
     let resizeTimer;
     window.addEventListener("resize", () => {
         clearTimeout(resizeTimer);
@@ -148,4 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
             ScrollTrigger.refresh();
         }, 250);
     });
+
+    initTeamAnimations();
 });
