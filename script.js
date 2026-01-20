@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     gsap.registerPlugin(ScrollTrigger);
 
+    // Smooth Scroll Setup
     const lenis = new Lenis();
     lenis.on("scroll", ScrollTrigger.update);
     gsap.ticker.add((time) => {
@@ -8,151 +9,137 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     gsap.ticker.lagSmoothing(0);
 
+    // --- 1. DATA CONFIGURATION ---
+    // Configure your list here. The script will inject these names/roles into the HTML order.
+    const membersConfig = [
+        { name: "Rishi", roles: "Cast • Writer • Actor • Camera Man" },
+        { name: "Binam", roles: "Cast • Writer • Editor • Actor • Camera Man" },
+        { name: "Harman", roles: "Cast • Writer • Actor" },
+        { name: "Deepak", roles: "Cast • Actor" },
+        { name: "Amrik", roles: "Cast • Actor" },
+        { name: "Jashan", roles: "Cast • Camera Man" },
+        { name: "Dhruv", roles: "Cast • Actor" },
+        { name: "Gurtej", roles: "Post Credit" },
+        { name: "Jaskaran", roles: "Executive Producer" }, // Added filler based on original HTML
+        { name: "Unknown", roles: "Special Thanks" } // Filler for 10th card
+    ];
+
+    // Inject Data into HTML
+    const memberElements = document.querySelectorAll('.team-member');
+    memberElements.forEach((member, index) => {
+        if (membersConfig[index]) {
+            const data = membersConfig[index];
+            const nameEl = member.querySelector('.name-text');
+            const roleEl = member.querySelector('.role-text');
+            const initialEl = member.querySelector('.team-member-name-initial h1');
+
+            if (nameEl) nameEl.innerHTML = `${data.name}`;
+            if (roleEl) roleEl.innerText = `( ${data.roles} )`;
+            if (initialEl) initialEl.innerText = data.name.charAt(0);
+        }
+    });
+
+    // --- 2. ANIMATION LOGIC ---
     const teamSection = document.querySelector(".team");
     const teamMembers = gsap.utils.toArray(".team-member");
     const teamMemberCards = gsap.utils.toArray(".team-member-card");
+    const teamInitials = gsap.utils.toArray(".team-member-name-initial h1");
 
-    const memberCount = teamMembers.length;
-
-    let cardPlaceholderEntrance = null;
-    let cardSlideInAnimation = null;
+    let animationContext;
 
     function initTeamAnimations() {
-        if (window.innerWidth < 1000) {
-            if (cardPlaceholderEntrance) cardPlaceholderEntrance.kill();
-            if (cardSlideInAnimation) cardSlideInAnimation.kill();
+        if (animationContext) animationContext.revert(); // Cleanup old animation on resize
 
-            teamMembers.forEach((member) => {
-                gsap.set(member, { clearProps: "all" });
-                const teamMemberInitial = member.querySelector(
-                    ".team-member-name-initial h1"
-                );
-                gsap.set(teamMemberInitial, { clearProps: "all" });
-            });
-
-            teamMemberCards.forEach((card) => {
-                gsap.set(card, { clearProps: "all" });
-            });
-
-            return;
-        }
-
-        if (cardPlaceholderEntrance) cardPlaceholderEntrance.kill();
-        if (cardSlideInAnimation) cardSlideInAnimation.kill();
-
-        // ENTRANCE ANIMATION - Members slide up row by row
-        cardPlaceholderEntrance = ScrollTrigger.create({
-            trigger: teamSection,
-            start: "top bottom",
-            end: "top 20%",
-            scrub: 1,
-            onUpdate: (self) => {
-                const progress = self.progress;
-
-                teamMembers.forEach((member, index) => {
-                    // Calculate which row this member is in (0, 1, 2, 3)
-                    const row = Math.floor(index / 3);
+        animationContext = gsap.context(() => {
+            
+            // MOBILE ANIMATION (Simple Fade Up)
+            if (window.innerWidth < 1000) {
+                teamMembers.forEach((member) => {
+                    gsap.from(member, {
+                        y: 100,
+                        opacity: 0,
+                        duration: 1,
+                        scrollTrigger: {
+                            trigger: member,
+                            start: "top 85%",
+                            end: "top 60%",
+                            scrub: 1
+                        }
+                    });
                     
-                    // Stagger by row
-                    const entranceDelay = 0.15;
-                    const entranceDuration = 0.4;
-                    const entranceStart = row * entranceDelay;
-                    const entranceEnd = entranceStart + entranceDuration;
-
-                    if (progress >= entranceStart && progress <= entranceEnd) {
-                        const memberEntranceProgress =
-                            (progress - entranceStart) / entranceDuration;
-
-                        const entranceY = 100 - memberEntranceProgress * 100;
-                        const entranceOpacity = memberEntranceProgress;
-                        
-                        gsap.set(member, { 
-                            y: `${entranceY}%`,
-                            opacity: entranceOpacity
-                        });
-
-                        const teamMemberInitial = member.querySelector(
-                            ".team-member-name-initial h1"
-                        );
-                        const initialLetterScaleDelay = 0.4;
-                        const initialLetterScaleProgress = Math.max(
-                            0,
-                            (memberEntranceProgress - initialLetterScaleDelay) /
-                                (1 - initialLetterScaleDelay)
-                        );
-                        gsap.set(teamMemberInitial, { scale: initialLetterScaleProgress });
-                    } else if (progress > entranceEnd) {
-                        gsap.set(member, { y: "0%", opacity: 1 });
-                        const teamMemberInitial = member.querySelector(
-                            ".team-member-name-initial h1"
-                        );
-                        gsap.set(teamMemberInitial, { scale: 1 });
-                    }
+                    // Initial pops in
+                    const initial = member.querySelector(".team-member-name-initial h1");
+                    gsap.to(initial, {
+                        scale: 1,
+                        scrollTrigger: {
+                            trigger: member,
+                            start: "top 70%",
+                            end: "top 50%",
+                            scrub: 1
+                        }
+                    });
                 });
-            },
-        });
+                return; 
+            }
 
-        // CARD SLIDE-IN ANIMATION
-        cardSlideInAnimation = ScrollTrigger.create({
-            trigger: teamSection,
-            start: "top 20%",
-            end: `+=${window.innerHeight * 3}`,
-            pin: true,
-            scrub: 1,
-            onUpdate: (self) => {
-                const progress = self.progress;
+            // DESKTOP ANIMATION (The "Files Leaked" Pin & Fly-in)
+            
+            // 1. Initial State: Hide cards and scale down initials
+            gsap.set(teamMemberCards, { 
+                x: "200%", // Push off screen to right
+                rotation: 15,
+                opacity: 0
+            });
+            gsap.set(teamInitials, { scale: 0 });
 
-                teamMemberCards.forEach((card, index) => {
-                    // Stagger each card individually
-                    const slideInStagger = 0.08;
-                    const xRotationDuration = 0.2;
-                    const xRotationStart = index * slideInStagger;
-                    const xRotationEnd = xRotationStart + xRotationDuration;
+            // 2. Master Timeline
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: teamSection,
+                    start: "top top", // Start when section hits top
+                    end: "+=3000", // Length of scroll duration
+                    pin: true,     // Hold the section in place
+                    scrub: 1,      // Smooth scrubbing
+                }
+            });
 
-                    if (progress >= xRotationStart && progress <= xRotationEnd) {
-                        const cardProgress =
-                            (progress - xRotationStart) / xRotationDuration;
+            // Sequence:
+            // A. Initials pop up slightly staggered
+            tl.to(teamInitials, {
+                scale: 1,
+                duration: 1,
+                stagger: 0.1,
+                ease: "back.out(1.7)"
+            });
 
-                        const cardInitialX = 300;
-                        const cardTargetX = -50;
-                        const cardSlideInX =
-                            cardInitialX + cardProgress * (cardTargetX - cardInitialX);
+            // B. Cards fly in from right to cover initials
+            tl.to(teamMemberCards, {
+                x: "0%",       // Move to grid position
+                rotation: 0,   // Straighten up
+                opacity: 1,
+                duration: 5,   // Duration relative to scroll length
+                stagger: 0.2,  // One after another
+                ease: "power3.out"
+            }, "<0.5"); // Start slightly after initials start
 
-                        const cardSlideInRotation = 20 - cardProgress * 20;
+            // C. Subtle hover effect scaling as you scroll past
+            tl.to(teamMemberCards, {
+                scale: 1.05,
+                stagger: {
+                    each: 0.2,
+                    yoyo: true,
+                    repeat: 1
+                },
+                duration: 1
+            }, "<2");
 
-                        gsap.set(card, {
-                            x: `${cardSlideInX}%`,
-                            rotation: cardSlideInRotation,
-                        });
-                    } else if (progress > xRotationEnd) {
-                        gsap.set(card, {
-                            x: "-50%",
-                            rotation: 0,
-                        });
-                    }
-
-                    // Scale animation
-                    const cardScaleStart = 0.6;
-                    const cardScaleEnd = 1;
-
-                    if (progress >= cardScaleStart && progress <= cardScaleEnd) {
-                        const scaleProgress =
-                            (progress - cardScaleStart) / (cardScaleEnd - cardScaleStart);
-                        const scaleValue = 0.75 + scaleProgress * 0.25;
-
-                        gsap.set(card, {
-                            scale: scaleValue,
-                        });
-                    } else if (progress > cardScaleEnd) {
-                        gsap.set(card, {
-                            scale: 1,
-                        });
-                    }
-                });
-            },
         });
     }
 
+    // Initialize
+    initTeamAnimations();
+
+    // Handle Resize
     let resizeTimer;
     window.addEventListener("resize", () => {
         clearTimeout(resizeTimer);
@@ -161,6 +148,4 @@ document.addEventListener("DOMContentLoaded", () => {
             ScrollTrigger.refresh();
         }, 250);
     });
-
-    initTeamAnimations();
 });
