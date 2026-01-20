@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800&family=DM+Mono:wght@300;400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,900;1,100;1,900&family=DM+Mono:ital,wght@0,300;0,500;1,300;1,500&display=swap");
 
 :root {
     --base-100: #171717;
@@ -19,69 +19,103 @@ body {
     overflow-x: hidden;
 }
 
+img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+h1 {
+    text-transform: uppercase;
+    font-size: 6rem;
+    font-weight: 800;
+    line-height: 0.8;
+}
+
+p {
+    font-family: "DM Mono";
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
 section {
     position: relative;
     width: 100%;
     height: 100svh;
     overflow: hidden;
+    padding: 1rem;
 }
 
-/* --- TEAM SECTION LAYOUT --- */
+.hero, .outro {
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+}
+
+.hero h1, .outro h1 {
+    width: 75%;
+    color: var(--base-300);
+}
+
 .team {
     display: flex;
-    align-items: center;
-    justify-content: center;
     gap: 1.5rem;
-    padding: 0 2rem;
-    max-width: 1600px;
+    max-width: 1400px;
     margin: 0 auto;
+    align-items: center;
 }
 
 .team-member {
-    position: relative;
     flex: 1;
-    height: 75vh;
+    position: relative;
+    width: 100%;
+    height: 80%;
     border: 2px dashed rgba(242, 245, 234, 0.35);
     border-radius: 1.5rem;
     will-change: transform;
-    /* Start hidden below the screen */
-    transform: translateY(125%);
+    transform: translateY(125%); /* Initial state for animation */
 }
+
+/* Z-index layering for overlap */
+.team-member:nth-child(1) { z-index: 10; }
+.team-member:nth-child(2) { z-index: 9; }
+.team-member:nth-child(3) { z-index: 8; }
+.team-member:nth-child(4) { z-index: 7; }
+/* ... add more if you have more members ... */
 
 .team-member-name-initial {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 1;
 }
 
 .team-member-name-initial h1 {
     color: var(--base-300);
     font-size: 18rem;
-    opacity: 0.5;
     will-change: transform;
-    transform: scale(0);
+    transform: scale(0); /* Initial state */
 }
 
 .team-member-card {
     position: absolute;
     top: 50%;
     left: 50%;
-    /* Start way off to the right and rotated */
-    transform: translate(300%, -50%) scale(0.75) rotate(20deg);
+    transform: translate(300%, -50%) scale(0.75) rotate(20deg); /* Fly-in start position */
     width: calc(100% + 4px);
     height: calc(100% + 4px);
     padding: 2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 1.5rem;
     background-color: var(--base-200);
     border-radius: 1.5rem;
     will-change: transform;
-    z-index: 10;
-    opacity: 0;
 }
 
 .team-member-img {
@@ -89,55 +123,42 @@ section {
     aspect-ratio: 1;
     border-radius: 1rem;
     overflow: hidden;
-    background: #ccc; /* Placeholder if image fails */
-}
-
-.team-member-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
 }
 
 .team-member-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    margin-top: 1rem;
+    gap: 0.5rem;
 }
 
 .team-member-info h1 {
     font-size: 3.5rem;
     color: var(--base-300);
-    line-height: 0.9;
-    text-transform: uppercase;
 }
 
-.role-text {
-    font-family: "DM Mono";
+.team-member-info p {
     color: var(--base-100);
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
+    font-weight: bold;
 }
 
-/* --- MOBILE --- */
+/* MOBILE FIXES */
 @media (max-width: 1000px) {
     .team {
-        flex-direction: column;
         height: auto;
-        padding: 5rem 1rem;
+        flex-direction: column;
         overflow: visible;
+        padding-top: 5rem;
     }
     .team-member {
-        width: 100%;
-        max-width: 380px;
-        height: 500px;
-        flex: none;
-        transform: translateY(0) !important;
-        margin-bottom: 4rem;
+        max-width: 400px;
+        height: 550px;
+        transform: translateY(0%) !important;
+        margin-bottom: 2rem;
     }
     .team-member-card {
         transform: translate(-50%, -50%) scale(1) rotate(0deg) !important;
-        opacity: 1 !important;
     }
     .team-member-name-initial h1 {
         transform: scale(1) !important;
