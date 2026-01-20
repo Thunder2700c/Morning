@@ -12,15 +12,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- 1. DATA CONFIGURATION ---
     // Configure your list here. The script will inject these names/roles into the HTML order.
     const membersConfig = [
-        { name: "Rishi", roles: "Cast • Writer • Actor • Camera Man" },
-        { name: "Binam", roles: "Cast • Writer • Editor • Actor • Camera Man" },
+        { name: "Rishi", roles: "Cast • Writer • Actor • Camera Man • Director" },
+        { name: "Binam", roles: "Cast • Writer • Editor • Actor • Camera Man • Director" },
         { name: "Harman", roles: "Cast • Writer • Actor" },
         { name: "Deepak", roles: "Cast • Actor" },
         { name: "Amrik", roles: "Cast • Actor" },
         { name: "Jashan", roles: "Cast • Camera Man" },
         { name: "Dhruv", roles: "Cast • Actor" },
         { name: "Gurtej", roles: "Post Credit" },
-        { name: "Jaskaran", roles: "Executive Producer" }, // Added filler based on original HTML
+        { name: "Jaskaran", roles: "Cast" }, // Added filler based on original HTML
         { name: "Unknown", roles: "Special Thanks" } // Filler for 10th card
     ];
 
